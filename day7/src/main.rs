@@ -6,11 +6,14 @@ struct ArenaTree<String> {
 }
 
 impl ArenaTree<String> {
-    fn node(&mut self, val: String) -> usize {
+    fn node(&mut self, cur_idx: usize, val: String) -> usize {
         //first see if it exists
-        for node in &self.arena {
-            if node.val == val {
-                return node.idx;
+        if &self.arena.len() > &0 {
+            let cur_node = &self.arena[cur_idx];
+            for child_idx in &cur_node.children {
+                if self.arena[*child_idx].val == val {
+                    return self.arena[*child_idx].idx;
+                }
             }
         }
         // Otherwise, add new node
@@ -19,33 +22,37 @@ impl ArenaTree<String> {
         idx
     }
 
-    fn insert(&mut self, p: String, c: String) {
+    fn insert(&mut self, p_idx: usize, c: String) {
         // Init nodes
-        let inner = self.node(p);
-        let outer = self.node(c);
+        let outer = self.node(p_idx, c);
         // set orbit
         match self.arena[outer].parent {
             Some(_) => panic!("Attempt to overwrite existing orbit"),
-            None => self.arena[outer].parent = Some(inner),
+            None => self.arena[outer].parent = Some(p_idx),
         }
         // set parents
-        self.arena[inner].children.push(outer);
+        self.arena[p_idx].children.push(outer);
     }
 
     // Now, we will traverse each node and its children.
-    fn traverse(&self, start_idx: usize, size_vec: &mut Vec<i32>) {
+    fn traverse(&self, start_idx: usize, size_vec: &mut Vec<i32>) -> i32 {
         let mut file_total: i32 = 0;
         for child in &self.arena[start_idx].children {
-            // println!(
-            //     "{} -> {}",
-            //     self.arena[start_idx].val, self.arena[*child].val
-            // );
+            println!(
+                "{} -> {}",
+                self.arena[start_idx].val, self.arena[*child].val
+            );
             if self.arena[*child].val.parse::<i32>().is_ok() {
                 file_total += self.arena[*child].val.parse::<i32>().unwrap();
             } else {
-                self.traverse(*child, size_vec);
+                file_total += self.traverse(*child, size_vec);
             }
         }
+        println!(
+            "File total for {} is {}",
+            self.arena[start_idx].val, file_total
+        );
+
         if file_total <= 100000 {
             println!(
                 "File total for {} is {}",
@@ -53,6 +60,7 @@ impl ArenaTree<String> {
             );
             size_vec.push(file_total);
         }
+        file_total
     }
 }
 
@@ -80,7 +88,7 @@ fn parse_file(fp: &str) -> ArenaTree<String> {
 
     let contents = fs::read_to_string(fp).expect("Something went wrong reading the file");
     let mut files: bool = false;
-    let mut cur_dir: String = String::new();
+    let mut cur_dir_idx: usize = 0;
 
     for l in contents.lines() {
         if l.starts_with("$") {
@@ -91,18 +99,16 @@ fn parse_file(fp: &str) -> ArenaTree<String> {
             } else if instruction.contains("cd") {
                 files = false;
                 let dir = instruction[3..].to_string();
-                if dir == "." {
-                    // First, we get the index of the current directory.
-                    let idx = tree.node(cur_dir.clone());
+                if dir == ".." {
                     // Then, we set the current directory to the parent of the current directory.
-                    cur_dir = tree.arena[idx].parent.unwrap().to_string();
+                    cur_dir_idx = tree.arena[cur_dir_idx].parent.unwrap();
                 } else {
-                    cur_dir = dir;
+                    cur_dir_idx = tree.node(cur_dir_idx, dir);
                 }
             }
         } else if files {
             let name = parse_internal_file(l);
-            tree.insert(cur_dir.clone(), name);
+            tree.insert(cur_dir_idx, name);
         }
     }
 
@@ -123,8 +129,8 @@ fn parse_internal_file(file: &str) -> String {
 
 fn main() {
     let mut size_vec: Vec<i32> = Vec::new();
-    let tree = parse_file("sample.txt");
-    // println!("{:?}", tree);
+    let tree = parse_file("input.txt");
+    println!("{:?}", tree);
     tree.traverse(0, &mut size_vec);
     println!("The sum is: {}", size_vec.iter().sum::<i32>());
     // let hello = tree.node("123".into());
