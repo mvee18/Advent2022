@@ -27,7 +27,9 @@ impl ArenaTree<String> {
         let outer = self.node(p_idx, c);
         // set orbit
         match self.arena[outer].parent {
-            Some(_) => panic!("Attempt to overwrite existing orbit"),
+            Some(_) => {
+                panic!("Attempt to overwrite existing orbit.")
+            }
             None => self.arena[outer].parent = Some(p_idx),
         }
         // set parents
@@ -53,13 +55,14 @@ impl ArenaTree<String> {
             self.arena[start_idx].val, file_total
         );
 
-        if file_total <= 100000 {
-            println!(
-                "File total for {} is {}",
-                self.arena[start_idx].val, file_total
-            );
-            size_vec.push(file_total);
-        }
+        // if file_total <= 100000 {
+        //     println!(
+        //         "File total for {} is {}",
+        //         self.arena[start_idx].val, file_total
+        //     );
+        //     size_vec.push(file_total);
+        // }
+        size_vec.push(file_total);
         file_total
     }
 }
@@ -94,9 +97,9 @@ fn parse_file(fp: &str) -> ArenaTree<String> {
         if l.starts_with("$") {
             // Remove the $ and the leading space.
             let instruction = &l[2..];
-            if instruction.contains("ls") {
+            if instruction.starts_with("ls") {
                 files = true;
-            } else if instruction.contains("cd") {
+            } else if instruction.starts_with("cd") {
                 files = false;
                 let dir = instruction[3..].to_string();
                 if dir == ".." {
@@ -127,12 +130,36 @@ fn parse_internal_file(file: &str) -> String {
     }
 }
 
+fn determine_which_to_delete(size_vec: &mut Vec<i32>) -> i32 {
+    let maximum_size: i32 = 70000000;
+    let needed_space: i32 = 30000000;
+    let used_space = maximum_size - size_vec.last().unwrap();
+
+    size_vec.reverse();
+
+    let mut candidates: Vec<i32> = vec![];
+    for size in size_vec {
+        if *size + used_space > needed_space {
+            candidates.push(*size);
+        }
+    }
+
+    candidates.sort();
+    candidates.first().unwrap().clone()
+}
+
 fn main() {
     let mut size_vec: Vec<i32> = Vec::new();
     let tree = parse_file("input.txt");
-    println!("{:?}", tree);
+    // println!("{:?}", tree);
     tree.traverse(0, &mut size_vec);
-    println!("The sum is: {}", size_vec.iter().sum::<i32>());
+
+    size_vec.sort();
+    // println!("{:?}", size_vec);
+    println!("The root dir is: {:?}", size_vec.last().unwrap());
+
+    let delete_size = determine_which_to_delete(&mut size_vec);
+    println!("You should delete the dir with size: {}", delete_size);
     // let hello = tree.node("123".into());
     // let world = tree.node("456".into());
     // tree.arena[hello].children.push(world);
