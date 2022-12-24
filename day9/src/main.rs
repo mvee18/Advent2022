@@ -205,31 +205,43 @@ fn tail_follow(h_grid: &Grid, t_grid: &mut Grid) {
 }
 
 fn main() {
-    let i = parse_file("input.txt");
+    let i = parse_file("sample.txt");
     // println!("{:?}", i);
 
-    let row = 500;
-    let col = 500;
+    let row = 6;
+    let col = 6;
 
     let mut t_grid = Grid::new(row, col);
     let mut h_grid = Grid::new(row, col);
 
     // We can start the simulation at the center.
-    t_grid.update_cell(row / 2, col / 2, 1);
-    t_grid.update_xy(row / 2, col / 2);
-    t_grid.erase_cell(row-1, 0);
+    // t_grid.update_cell(row / 2, col / 2, 1);
+    // t_grid.update_xy(row / 2, col / 2);
+    // t_grid.erase_cell(row-1, 0);
 
-    h_grid.update_cell(row / 2, col / 2, 1);
-    h_grid.update_xy(row / 2, col / 2);
-    h_grid.erase_cell(row-1, 0);
+    // h_grid.update_cell(row / 2, col / 2, 1);
+    // h_grid.update_xy(row / 2, col / 2);
+    // h_grid.erase_cell(row-1, 0);
 
     // println!("{}", t_grid);
     // println!("{:?}", t_grid.get_xy_coords());
     // println!("{}", h_grid);
 
+    // Clear the screen.
+    // print!("\x1B[2J\x1B[1;1H");
+
     for instruction in i {
         println!("Executing instruction: {:?}", instruction);
         execute_instruction(&mut h_grid, &mut t_grid, instruction);
+
+        // println!("Continue? (q to quit)");
+        // let mut user_input = String::new();
+        // std::io::stdin().read_line(&mut user_input).expect("Failed to read line");
+        // if user_input.trim() == "q" {
+        //     break;
+        // } else {
+        //     continue;
+        // }
     }
 
     t_grid.count_ones();
@@ -335,5 +347,22 @@ mod tests {
         tail_follow(&h_g, &mut t_g);
 
         assert_eq!(t_g.get_xy_coords(), (3, 1));
+    }
+
+    #[test]
+    fn test_tail_diagonal_left() {
+        let h_g = Grid::new(5, 5);
+        let mut t_g = Grid::new(5, 5);
+
+        t_g.update_cell(4, 0, 0);
+        t_g.update_cell(3, 2, 1);
+        t_g.update_xy(3, 2);
+
+        println!("h_g:\n{}", h_g);
+        println!("t_g:\n{}", t_g);
+
+        tail_follow(&h_g, &mut t_g);
+
+        assert_eq!(t_g.get_xy_coords(), (3, 3));
     }
 }
